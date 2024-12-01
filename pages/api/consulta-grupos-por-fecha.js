@@ -14,8 +14,6 @@ export default async function handler(req, res) {
     const [day, month, year] = fecha.split("/");
     const fechaAirtable = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
-    console.log("Fecha transformada para Airtable:", fechaAirtable);
-
     // Obtener todos los grupos
     const gruposRecords = await base(process.env.GRUPOS_TABLE_ID).select().all();
     const grupos = gruposRecords.map((record) => ({
@@ -36,13 +34,13 @@ export default async function handler(req, res) {
     }));
 
     // Determinar grupos no disponibles
-    const gruposOcupadosNombres = disponibilidades.map((d) => d["Nombre del grupo"]);
+    const gruposNoDisponiblesNombres = disponibilidades.map((d) => d["Nombre del grupo"].toLowerCase());
 
     const noDisponibles = grupos
-      .filter((grupo) => gruposOcupadosNombres.includes(grupo["Nombre del grupo"]))
+      .filter((grupo) => gruposNoDisponiblesNombres.includes(grupo["Nombre del grupo"].toLowerCase()))
       .map((grupo) => {
         const disponibilidad = disponibilidades.find(
-          (d) => d["Nombre del grupo"] === grupo["Nombre del grupo"]
+          (d) => d["Nombre del grupo"].toLowerCase() === grupo["Nombre del grupo"].toLowerCase()
         );
         return {
           ...grupo,
@@ -50,13 +48,10 @@ export default async function handler(req, res) {
         };
       });
 
-    // Determinar grupos disponibles
-    const disponibles = grupos.filter((grupo) => !gruposOcupadosNombres.includes(grupo["Nombre del grupo"]));
-
     // Responder con los resultados
     res.status(200).json({
-      disponibles,
-      noDisponibles,
+      grupos, // Todos los grupos
+      disponibilidades: noDisponibles, // Solo los grupos con disponibilidad registrada
     });
   } catch (error) {
     console.error("Error en consulta-grupos-por-fecha.js:", error.message);
