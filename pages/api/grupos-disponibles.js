@@ -1,6 +1,5 @@
-const Airtable = require("airtable");
+import Airtable from "airtable";
 
-// Configuración de Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
 export default async function handler(req, res) {
@@ -11,12 +10,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Transformar la fecha al formato requerido por Airtable (aaaa-mm-dd)
+    // Transformar la fecha al formato compatible con Airtable (aaaa-mm-dd)
     const [day, month, year] = fecha.split("/");
     const fechaAirtable = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-
-    // Log para depurar
-    console.log("Fecha transformada para Airtable:", fechaAirtable);
 
     // Obtener todos los grupos
     const gruposRecords = await base(process.env.GRUPOS_TABLE_ID).select().all();
@@ -25,29 +21,42 @@ export default async function handler(req, res) {
       ...record.fields,
     }));
 
-    console.log("Total de grupos:", grupos.length);
-
-    // Obtener disponibilidades en esa fecha
+    // Obtener todas las disponibilidades para la fecha
     const disponibilidadesRecords = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `AND({Fecha} = "${fechaAirtable}", OR({Estado} = "Reservado", {Estado} = "Confirmado"))`,
+        filterByFormula: `AND(IS_SAME({Fecha}, "${fechaAirtable}", 'day'))`,
       })
       .all();
 
-    console.log("Total de disponibilidades en esa fecha:", disponibilidadesRecords.length);
+    const disponibilidades = disponibilidadesRecords.map((record) => ({
+      id: record.id,
+      ...record.fields,
+    }));
 
-    const gruposOcupados = disponibilidadesRecords.map((record) => record.fields["Nombre del grupo"]);
+    // Determinar grupos disponibles y no disponibles
+    const gruposOcupadosNombres = disponibilidades.map((d) => d["Nombre del grupo"]);
 
-    // Filtrar grupos disponibles
-    const gruposDisponibles = grupos.filter(
-      (grupo) => !gruposOcupados.includes(grupo["Nombre del grupo"])
-    );
+    const noDisponibles = grupos
+      .filter((grupo) => gruposOcupadosNombres.includes(grupo["Nombre del grupo"]))
+      .map((grupo) => {
+        const disponibilidad = disponibilidades.find(
+          (d) => d["Nombre del grupo"] === grupo["Nombre del grupo"]
+        );
+        return {
+          ...grupo,
+          Disponibilidad: disponibilidad, // Añadimos los datos de la tabla disponibilidades
+        };
+      });
 
-    console.log("Total de grupos disponibles:", gruposDisponibles.length);
+    const disponibles = grupos.filter((grupo) => !gruposOcupadosNombres.includes(grupo["Nombre del grupo"]));
 
-    res.status(200).json(gruposDisponibles);
+    // Responder con los resultados
+    res.status(200).json({
+      disponibles,
+      noDisponibles,
+    });
   } catch (error) {
-    console.error("Error en grupos-disponibles.js:", error.message);
-    res.status(500).json({ error: error.message });
+    console.error("Error en consulta-grupos-por-fecha.js:", error.message);
+    res.status(500).json({ error: "Hubo un error al consultar los grupos." });
   }
 }
