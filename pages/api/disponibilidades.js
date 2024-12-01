@@ -11,13 +11,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Transformar la fecha al formato aaaa-mm-dd
-    const [day, month, year] = fecha.split("/");
-    const fechaAirtable = `${year}-${month}-${day}`;
-
+    // Usar la fecha directamente sin transformación
     const records = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `{Fecha} = "${fechaAirtable}"`,
+        filterByFormula: `{Fecha} = "${fecha}"`,
       })
       .all();
 
