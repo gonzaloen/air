@@ -11,12 +11,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Usar la fecha directamente sin transformación
+    // Transformar la fecha al formato requerido por Airtable (aaaa-mm-dd)
+    const [day, month, year] = fecha.split("/");
+    const fechaAirtable = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+
+    // Log para depurar
+    console.log("Fecha transformada para Airtable:", fechaAirtable);
+
     const records = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `{Fecha} = "${fecha}"`,
+        filterByFormula: `{Fecha} = "${fechaAirtable}"`,
       })
       .all();
+
+    // Log para depurar resultados obtenidos
+    console.log("Registros obtenidos:", records.length);
 
     const resultados = records.map((record) => ({
       id: record.id,
