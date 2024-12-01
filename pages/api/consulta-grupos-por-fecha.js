@@ -40,13 +40,15 @@ export default async function handler(req, res) {
     }));
 
     // Determinar grupos no disponibles
-    const gruposNoDisponiblesNombres = disponibilidades.map((d) => d["Nombre del grupo"].toLowerCase());
+    const gruposNoDisponiblesNombres = disponibilidades
+      .map((d) => d["Nombre del grupo"]?.toLowerCase()) // Validar si existe 'Nombre del grupo'
+      .filter(Boolean); // Eliminar valores undefined o null
 
     const noDisponibles = grupos
-      .filter((grupo) => gruposNoDisponiblesNombres.includes(grupo["Nombre del grupo"].toLowerCase()))
+      .filter((grupo) => gruposNoDisponiblesNombres.includes(grupo["Nombre del grupo"]?.toLowerCase()))
       .map((grupo) => {
         const disponibilidad = disponibilidades.find(
-          (d) => d["Nombre del grupo"].toLowerCase() === grupo["Nombre del grupo"].toLowerCase()
+          (d) => d["Nombre del grupo"]?.toLowerCase() === grupo["Nombre del grupo"]?.toLowerCase()
         );
         return {
           ...grupo,
@@ -58,7 +60,7 @@ export default async function handler(req, res) {
 
     // Determinar grupos disponibles
     const disponibles = grupos.filter(
-      (grupo) => !gruposNoDisponiblesNombres.includes(grupo["Nombre del grupo"].toLowerCase())
+      (grupo) => !gruposNoDisponiblesNombres.includes(grupo["Nombre del grupo"]?.toLowerCase())
     );
 
     console.log("Total de grupos disponibles:", disponibles.length);
