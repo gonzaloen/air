@@ -44,19 +44,34 @@ export default async function handler(req, res) {
       .map((d) => d["Nombre del grupo"])
       .filter(Boolean); // Eliminar valores undefined o null
 
-    const noDisponibles = grupos.filter((grupo) =>
-      gruposNoDisponiblesNombres.includes(grupo["Name"])
-    );
+    const noDisponibles = grupos
+      .filter((grupo) => gruposNoDisponiblesNombres.includes(grupo["Name"]))
+      .map((grupo) => {
+        const disponibilidad = disponibilidades.find(
+          (d) => d["Nombre del grupo"] === grupo["Name"]
+        );
+        return {
+          ...grupo,
+          Disponibilidad: {
+            Fecha: disponibilidad?.Fecha,
+            Estado: disponibilidad?.Estado,
+            Población: disponibilidad?.Población,
+            ContratadoPor: disponibilidad?.["Contratado por"]
+          },
+        };
+      });
 
     // Determinar grupos disponibles
     const disponibles = grupos.filter(
       (grupo) => !gruposNoDisponiblesNombres.includes(grupo["Name"])
     );
 
-    // Responder con los resultados
+    console.log("Total de grupos disponibles:", disponibles.length);
+
+    // Responder con los resultados, priorizando "no disponibles"
     res.status(200).json({
-      disponibles,
       noDisponibles,
+      disponibles
     });
   } catch (error) {
     console.error("Error al consultar los grupos:", error.message);
