@@ -7,18 +7,16 @@ export default async function handler(req, res) {
   const { fecha } = req.query;
 
   if (!fecha) {
-    console.error("Fecha no proporcionada en la consulta");
     return res.status(400).json({ error: "Por favor, proporciona una fecha en el formato dd/mm/aaaa" });
   }
 
   try {
-    // Log de la fecha recibida
-    console.log("Fecha recibida:", fecha);
+    // Transformar la fecha al formato aaaa-mm-dd
+    const [day, month, year] = fecha.split("/");
+    const fechaAirtable = `${year}-${month}-${day}`;
 
     // Obtener todos los grupos
     const gruposRecords = await base(process.env.GRUPOS_TABLE_ID).select().all();
-    console.log("Grupos obtenidos:", gruposRecords.length);
-
     const grupos = gruposRecords.map((record) => ({
       id: record.id,
       ...record.fields,
@@ -27,24 +25,20 @@ export default async function handler(req, res) {
     // Obtener todas las disponibilidades para la fecha dada
     const disponibilidadesRecords = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `AND(FECHA("${fecha}"), OR({Estado} = "Reservado", {Estado} = "Confirmado"))`,
+        filterByFormula: `{Fecha} = "${fechaAirtable}"`,
       })
       .all();
-    console.log("Disponibilidades obtenidas:", disponibilidadesRecords.length);
 
     const gruposOcupados = disponibilidadesRecords.map((record) => record.fields["Nombre del grupo"]);
 
-    // Filtrar los grupos disponibles
+    // Filtrar grupos disponibles
     const gruposDisponibles = grupos.filter(
       (grupo) => !gruposOcupados.includes(grupo["Nombre del grupo"])
     );
 
-    // Log de grupos disponibles
-    console.log("Grupos disponibles:", gruposDisponibles.length);
-
     res.status(200).json(gruposDisponibles);
   } catch (error) {
-    console.error("Error en el servidor:", error.message);
+    console.error("Error en grupos-disponibles.js:", error.message);
     res.status(500).json({ error: error.message });
   }
 }
