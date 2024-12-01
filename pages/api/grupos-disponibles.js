@@ -1,6 +1,3 @@
-const Airtable = require("airtable");
-
-// Configuración de Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
 export default async function handler(req, res) {
@@ -11,14 +8,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Obtener todos los grupos
+    // Consultar la tabla de grupos usando `process.env.GRUPOS_TABLE_ID`
     const gruposRecords = await base(process.env.GRUPOS_TABLE_ID).select().all();
     const grupos = gruposRecords.map((record) => ({
       id: record.id,
       ...record.fields,
     }));
 
-    // Obtener todas las disponibilidades para la fecha dada
+    // Consultar disponibilidades usando `process.env.DISPONIBILIDADES_TABLE_ID`
     const disponibilidadesRecords = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
         filterByFormula: `AND(FECHA("${fecha}"), OR({Estado} = "Reservado", {Estado} = "Confirmado"))`,
@@ -27,7 +24,7 @@ export default async function handler(req, res) {
 
     const gruposOcupados = disponibilidadesRecords.map((record) => record.fields["Nombre del grupo"]);
 
-    // Filtrar grupos disponibles
+    // Filtrar los grupos disponibles
     const gruposDisponibles = grupos.filter(
       (grupo) => !gruposOcupados.includes(grupo["Nombre del grupo"])
     );
@@ -37,4 +34,3 @@ export default async function handler(req, res) {
     res.status(500).json({ error: error.message });
   }
 }
-
