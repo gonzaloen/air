@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const records = await base("disponibilidades")
+    const records = await base("tblj8aQpYmntlt67E") // ID de la tabla `disponibilidades`
       .select({
         filterByFormula: `AND(FECHA("${fecha}"), {Estado} = "Reservado")`,
       })
