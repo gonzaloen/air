@@ -15,21 +15,21 @@ export default async function handler(req, res) {
     const [day, month, year] = fecha.split("/");
     const fechaAirtable = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
-    // Log para depurar
     console.log("Fecha transformada para Airtable:", fechaAirtable);
 
+    // Seleccionar todos los registros que coincidan con la fecha
     const records = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
         filterByFormula: `{Fecha} = "${fechaAirtable}"`,
       })
       .all();
 
-    // Log para depurar resultados obtenidos
     console.log("Registros obtenidos:", records.length);
 
+    // Mapear todos los campos de cada registro
     const resultados = records.map((record) => ({
       id: record.id,
-      ...record.fields,
+      fields: record.fields, // Incluye todos los campos
     }));
 
     res.status(200).json(resultados);
