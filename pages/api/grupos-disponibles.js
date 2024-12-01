@@ -11,21 +11,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Transformar la fecha al formato aaaa-mm-dd
-    const [day, month, year] = fecha.split("/");
-    const fechaAirtable = `${year}-${month}-${day}`;
-
-    // Obtener todos los grupos
+    // Usar la fecha directamente sin transformación
     const gruposRecords = await base(process.env.GRUPOS_TABLE_ID).select().all();
     const grupos = gruposRecords.map((record) => ({
       id: record.id,
       ...record.fields,
     }));
 
-    // Obtener todas las disponibilidades para la fecha dada
     const disponibilidadesRecords = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `{Fecha} = "${fechaAirtable}"`,
+        filterByFormula: `AND({Fecha} = "${fecha}", OR({Estado} = "Reservado", {Estado} = "Confirmado"))`,
       })
       .all();
 
