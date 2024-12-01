@@ -11,9 +11,13 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Transformar la fecha al formato aaaa-mm-dd
+    const [day, month, year] = fecha.split("/");
+    const fechaAirtable = `${year}-${month}-${day}`;
+
     const records = await base(process.env.DISPONIBILIDADES_TABLE_ID)
       .select({
-        filterByFormula: `AND(FECHA("${fecha}"), {Estado} = "Reservado")`,
+        filterByFormula: `{Fecha} = "${fechaAirtable}"`,
       })
       .all();
 
@@ -24,6 +28,7 @@ export default async function handler(req, res) {
 
     res.status(200).json(resultados);
   } catch (error) {
+    console.error("Error en disponibilidades.js:", error.message);
     res.status(500).json({ error: error.message });
   }
 }
