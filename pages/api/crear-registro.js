@@ -24,8 +24,8 @@ export default async function handler(req, res) {
       {
         fields: {
           Name: nombre,
-          Email: email,
-          Teléfono: telefono,
+          email: email,
+          teléfono: telefono,
           Fecha: fecha,
           Respuesta: respuesta,
         },
