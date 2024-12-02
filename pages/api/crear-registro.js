@@ -1,5 +1,6 @@
 import Airtable from "airtable";
 
+// Configuración de la base de Airtable
 const base = new Airtable({ apiKey: process.env.AIRTABLE_API_KEY }).base(process.env.AIRTABLE_BASE_ID);
 
 export default async function handler(req, res) {
@@ -9,13 +10,17 @@ export default async function handler(req, res) {
 
   const { nombre, email, telefono, fecha, respuesta } = req.body;
 
+  // Validación de datos obligatorios
   if (!nombre || !email || !telefono || !fecha || !respuesta) {
     return res.status(400).json({ error: "Faltan datos necesarios: nombre, email, telefono, fecha o respuesta." });
   }
 
   try {
+    // Usar la variable de entorno para el ID de la tabla
+    const tableId = process.env.AIRTABLE_RESPUESTA_TABLE_ID;
+
     // Crear un nuevo registro en Airtable
-    const newRecord = await base("tblx4QRbWr3fWzxQQ").create([
+    const newRecord = await base(tableId).create([
       {
         fields: {
           Name: nombre,
